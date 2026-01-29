@@ -135,7 +135,7 @@ Add stat panels displaying PR timing metrics (coding, pickup, review, deploy tim
 - [x] 4.5 Create "Average PR Deploy Time" stat panel (id: 107, gridPos: h:7, w:6, x:18, y:18) with same styling
 - [x] 4.6 Add links to respective DevLake documentation pages for each metric
 
-### [ ] 5.0 Create Trend Chart for Historical Analysis
+### [x] 5.0 Create Trend Chart for Historical Analysis
 
 Add time series panel showing bounded cycle time trend over time with weekly/monthly aggregation.
 
@@ -148,17 +148,17 @@ Add time series panel showing bounded cycle time trend over time with weekly/mon
 
 #### 5.0 Tasks
 
-- [ ] 5.1 Write SQL query that:
+- [x] 5.1 Write SQL query that:
   - Uses `DATE_FORMAT()` or similar for weekly/monthly time bucketing
   - Calculates average bounded cycle time per time bucket
   - Returns two columns: time bucket (as datetime) and average hours
   - Filters by all dashboard variables
-- [ ] 5.2 Create time series panel (id: 108, type: "timeseries", gridPos: h:8, w:24, x:0, y:25) with:
+- [x] 5.2 Create time series panel (id: 108, type: "timeseries", gridPos: h:8, w:24, x:0, y:25) with:
   - `drawStyle: "line"`, `lineInterpolation: "linear"`
   - `fillOpacity: 10` for subtle area fill
   - Green color for the trend line
-- [ ] 5.3 Configure Y-axis label as "Hours" and legend at bottom
-- [ ] 5.4 Enable tooltip with `mode: "single"` for clean display
+- [x] 5.3 Configure Y-axis label as "Hours" and legend at bottom
+- [x] 5.4 Enable tooltip with `mode: "single"` for clean display
 
 ### [ ] 6.0 Build Detailed Issue Table
 

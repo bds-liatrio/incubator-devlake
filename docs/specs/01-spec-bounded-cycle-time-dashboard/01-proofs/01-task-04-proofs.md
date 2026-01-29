@@ -30,36 +30,29 @@ $ jq '.panels[4:8] | .[] | {id, title, type, gridPos}' grafana/dashboards/DORADe
 ## SQL Query Template (Example: PR Coding Time)
 
 ```sql
-WITH bounded_issues AS (
+WITH _prs AS (
   SELECT
-    i.id as issue_id,
-    MIN(CASE WHEN ish.original_status = '${start_status}' THEN ish.start_date END) as start_time,
-    MIN(CASE WHEN ish.original_status = '${end_status}' THEN ish.start_date END) as end_time
-  FROM issues i
-  JOIN board_issues bi ON i.id = bi.issue_id
-  JOIN project_mapping pm ON bi.board_id = pm.row_id AND pm.`table` = 'boards'
-  JOIN issue_status_history ish ON i.id = ish.issue_id
+    pr.id,
+    pr.created_date as pr_issued_date,
+    COALESCE(prm.pr_coding_time/60, 0) as coding_time
+  FROM pull_requests pr
+    LEFT JOIN project_pr_metrics prm ON pr.id = prm.id
+    JOIN project_mapping pm ON pr.base_repo_id = pm.row_id AND pm.`table` = 'repos'
   WHERE
-    pm.project_name IN (${project})
-    AND i.original_type IN (${issue_type})
-    AND ish.original_status IN ('${start_status}', '${end_status}')
-  GROUP BY i.id
-  HAVING start_time IS NOT NULL
-    AND end_time IS NOT NULL
-    AND end_time > start_time
-    AND $__timeFilter(end_time)
+    $__timeFilter(prm.pr_deployed_date)
+    AND pm.project_name IN (${project})
+  GROUP BY pr.id, pr.created_date, prm.pr_coding_time
 )
-SELECT
-  AVG(COALESCE(ppm.pr_coding_time/60, 0)) as 'Average PR Coding Time (h)'
-FROM bounded_issues bi
-JOIN pull_request_issues pri ON bi.issue_id = pri.issue_id
-JOIN project_pr_metrics ppm ON pri.pull_request_id = ppm.id
+SELECT AVG(coding_time) as 'Average PR Coding Time (h)'
+FROM _prs
 ```
 
 ### Query Features
-- Reuses `bounded_issues` CTE from other queries
-- Joins through `pull_request_issues` to `project_pr_metrics`
+- Follows the reference dashboard pattern (DORADetails-LeadTimeforChanges.json)
+- Queries `pull_requests` directly with LEFT JOIN to `project_pr_metrics`
+- Uses `project_mapping` on repos for project filtering
 - Uses `COALESCE(metric/60, 0)` for null handling and minute-to-hour conversion
+- Time filter on `prm.pr_deployed_date` for deployed PRs only
 - Each panel uses the appropriate metric column:
   - `pr_coding_time`
   - `pr_pickup_time`

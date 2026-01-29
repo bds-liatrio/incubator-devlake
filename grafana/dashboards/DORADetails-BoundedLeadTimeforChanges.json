@@ -420,7 +420,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "WITH bounded_issues AS (\n  SELECT \n    i.id as issue_id,\n    MIN(CASE WHEN ish.original_status = '${start_status}' THEN ish.start_date END) as start_time,\n    MIN(CASE WHEN ish.original_status = '${end_status}' THEN ish.start_date END) as end_time\n  FROM issues i\n  JOIN board_issues bi ON i.id = bi.issue_id\n  JOIN project_mapping pm ON bi.board_id = pm.row_id AND pm.`table` = 'boards'\n  JOIN issue_status_history ish ON i.id = ish.issue_id\n  WHERE \n    pm.project_name IN (${project})\n    AND i.original_type IN (${issue_type})\n    AND ish.original_status IN ('${start_status}', '${end_status}')\n  GROUP BY i.id\n  HAVING start_time IS NOT NULL \n    AND end_time IS NOT NULL \n    AND end_time > start_time\n    AND $__timeFilter(end_time)\n)\nSELECT \n  AVG(COALESCE(ppm.pr_coding_time/60, 0)) as 'Average PR Coding Time (h)'\nFROM bounded_issues bi\nJOIN pull_request_issues pri ON bi.issue_id = pri.issue_id\nJOIN project_pr_metrics ppm ON pri.pull_request_id = ppm.id",
+          "rawSql": "WITH _prs AS (\n  SELECT\n    pr.id,\n    pr.created_date as pr_issued_date,\n    COALESCE(prm.pr_coding_time/60, 0) as coding_time\n  FROM pull_requests pr\n    LEFT JOIN project_pr_metrics prm ON pr.id = prm.id\n    JOIN project_mapping pm ON pr.base_repo_id = pm.row_id AND pm.`table` = 'repos'\n  WHERE\n    $__timeFilter(prm.pr_deployed_date)\n    AND pm.project_name IN (${project})\n  GROUP BY pr.id, pr.created_date, prm.pr_coding_time\n)\nSELECT AVG(coding_time) as 'Average PR Coding Time (h)'\nFROM _prs",
           "refId": "A",
           "sql": {
             "columns": [
@@ -505,7 +505,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "WITH bounded_issues AS (\n  SELECT \n    i.id as issue_id,\n    MIN(CASE WHEN ish.original_status = '${start_status}' THEN ish.start_date END) as start_time,\n    MIN(CASE WHEN ish.original_status = '${end_status}' THEN ish.start_date END) as end_time\n  FROM issues i\n  JOIN board_issues bi ON i.id = bi.issue_id\n  JOIN project_mapping pm ON bi.board_id = pm.row_id AND pm.`table` = 'boards'\n  JOIN issue_status_history ish ON i.id = ish.issue_id\n  WHERE \n    pm.project_name IN (${project})\n    AND i.original_type IN (${issue_type})\n    AND ish.original_status IN ('${start_status}', '${end_status}')\n  GROUP BY i.id\n  HAVING start_time IS NOT NULL \n    AND end_time IS NOT NULL \n    AND end_time > start_time\n    AND $__timeFilter(end_time)\n)\nSELECT \n  AVG(COALESCE(ppm.pr_pickup_time/60, 0)) as 'Average PR Pickup Time (h)'\nFROM bounded_issues bi\nJOIN pull_request_issues pri ON bi.issue_id = pri.issue_id\nJOIN project_pr_metrics ppm ON pri.pull_request_id = ppm.id",
+          "rawSql": "WITH _prs AS (\n  SELECT\n    pr.id,\n    pr.created_date as pr_issued_date,\n    COALESCE(prm.pr_pickup_time/60, 0) as pickup_time\n  FROM pull_requests pr\n    LEFT JOIN project_pr_metrics prm ON pr.id = prm.id\n    JOIN project_mapping pm ON pr.base_repo_id = pm.row_id AND pm.`table` = 'repos'\n  WHERE\n    $__timeFilter(prm.pr_deployed_date)\n    AND pm.project_name IN (${project})\n  GROUP BY pr.id, pr.created_date, prm.pr_pickup_time\n)\nSELECT AVG(pickup_time) as 'Average PR Pickup Time (h)'\nFROM _prs",
           "refId": "A",
           "sql": {
             "columns": [
@@ -590,7 +590,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "WITH bounded_issues AS (\n  SELECT \n    i.id as issue_id,\n    MIN(CASE WHEN ish.original_status = '${start_status}' THEN ish.start_date END) as start_time,\n    MIN(CASE WHEN ish.original_status = '${end_status}' THEN ish.start_date END) as end_time\n  FROM issues i\n  JOIN board_issues bi ON i.id = bi.issue_id\n  JOIN project_mapping pm ON bi.board_id = pm.row_id AND pm.`table` = 'boards'\n  JOIN issue_status_history ish ON i.id = ish.issue_id\n  WHERE \n    pm.project_name IN (${project})\n    AND i.original_type IN (${issue_type})\n    AND ish.original_status IN ('${start_status}', '${end_status}')\n  GROUP BY i.id\n  HAVING start_time IS NOT NULL \n    AND end_time IS NOT NULL \n    AND end_time > start_time\n    AND $__timeFilter(end_time)\n)\nSELECT \n  AVG(COALESCE(ppm.pr_review_time/60, 0)) as 'Average PR Review Time (h)'\nFROM bounded_issues bi\nJOIN pull_request_issues pri ON bi.issue_id = pri.issue_id\nJOIN project_pr_metrics ppm ON pri.pull_request_id = ppm.id",
+          "rawSql": "WITH _prs AS (\n  SELECT\n    pr.id,\n    pr.created_date as pr_issued_date,\n    COALESCE(prm.pr_review_time/60, 0) as review_time\n  FROM pull_requests pr\n    LEFT JOIN project_pr_metrics prm ON pr.id = prm.id\n    JOIN project_mapping pm ON pr.base_repo_id = pm.row_id AND pm.`table` = 'repos'\n  WHERE\n    $__timeFilter(prm.pr_deployed_date)\n    AND pm.project_name IN (${project})\n  GROUP BY pr.id, pr.created_date, prm.pr_review_time\n)\nSELECT AVG(review_time) as 'Average PR Review Time (h)'\nFROM _prs",
           "refId": "A",
           "sql": {
             "columns": [
@@ -675,7 +675,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "WITH bounded_issues AS (\n  SELECT \n    i.id as issue_id,\n    MIN(CASE WHEN ish.original_status = '${start_status}' THEN ish.start_date END) as start_time,\n    MIN(CASE WHEN ish.original_status = '${end_status}' THEN ish.start_date END) as end_time\n  FROM issues i\n  JOIN board_issues bi ON i.id = bi.issue_id\n  JOIN project_mapping pm ON bi.board_id = pm.row_id AND pm.`table` = 'boards'\n  JOIN issue_status_history ish ON i.id = ish.issue_id\n  WHERE \n    pm.project_name IN (${project})\n    AND i.original_type IN (${issue_type})\n    AND ish.original_status IN ('${start_status}', '${end_status}')\n  GROUP BY i.id\n  HAVING start_time IS NOT NULL \n    AND end_time IS NOT NULL \n    AND end_time > start_time\n    AND $__timeFilter(end_time)\n)\nSELECT \n  AVG(COALESCE(ppm.pr_deploy_time/60, 0)) as 'Average PR Deploy Time (h)'\nFROM bounded_issues bi\nJOIN pull_request_issues pri ON bi.issue_id = pri.issue_id\nJOIN project_pr_metrics ppm ON pri.pull_request_id = ppm.id",
+          "rawSql": "WITH _prs AS (\n  SELECT\n    pr.id,\n    pr.created_date as pr_issued_date,\n    COALESCE(prm.pr_deploy_time/60, 0) as deploy_time\n  FROM pull_requests pr\n    LEFT JOIN project_pr_metrics prm ON pr.id = prm.id\n    JOIN project_mapping pm ON pr.base_repo_id = pm.row_id AND pm.`table` = 'repos'\n  WHERE\n    $__timeFilter(prm.pr_deployed_date)\n    AND pm.project_name IN (${project})\n  GROUP BY pr.id, pr.created_date, prm.pr_deploy_time\n)\nSELECT AVG(deploy_time) as 'Average PR Deploy Time (h)'\nFROM _prs",
           "refId": "A",
           "sql": {
             "columns": [
@@ -698,6 +698,114 @@
       ],
       "title": "4.4 Average PR Deploy Time",
       "type": "stat"
+    },
+    {
+      "datasource": "mysql",
+      "description": "Weekly average bounded cycle time trend",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Hours",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "h"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 25
+      },
+      "id": 108,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "maxHeight": 600,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": "mysql",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH bounded_issues AS (\n  SELECT \n    i.id as issue_id,\n    MIN(CASE WHEN ish.original_status = '${start_status}' THEN ish.start_date END) as start_time,\n    MIN(CASE WHEN ish.original_status = '${end_status}' THEN ish.start_date END) as end_time\n  FROM issues i\n  JOIN board_issues bi ON i.id = bi.issue_id\n  JOIN project_mapping pm ON bi.board_id = pm.row_id AND pm.`table` = 'boards'\n  JOIN issue_status_history ish ON i.id = ish.issue_id\n  WHERE \n    pm.project_name IN (${project})\n    AND i.original_type IN (${issue_type})\n    AND ish.original_status IN ('${start_status}', '${end_status}')\n  GROUP BY i.id\n  HAVING start_time IS NOT NULL \n    AND end_time IS NOT NULL \n    AND end_time > start_time\n    AND $__timeFilter(end_time)\n)\nSELECT \n  DATE(end_time) as time,\n  AVG(TIMESTAMPDIFF(MINUTE, start_time, end_time) / 60.0) as 'Avg Bounded Cycle Time (h)'\nFROM bounded_issues\nGROUP BY DATE(end_time)\nORDER BY time",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "5. Bounded Cycle Time Trend",
+      "type": "timeseries"
     }
   ],
   "refresh": "",
