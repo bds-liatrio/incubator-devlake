@@ -1,0 +1,281 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "bolt",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Go Back",
+      "tooltip": "",
+      "type": "link",
+      "url": "/d/qNo8_0M4z/dora?orgId=1"
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 100,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "## Jira Workflow Node Graph\n\nThis dashboard visualizes your Jira workflow as an interactive node graph:\n- **Nodes** represent workflow statuses with average cycle time (hours) and PR processing time\n- **Edges** show transitions between statuses with percentage labels (% of issues taking each path)\n- **Colors** indicate relative performance: green (fastest), orange (medium), red (slowest)\n\nUse **Start Status** and **End Status** filters to focus on a specific workflow phase. Use **Exclude Statuses** to remove statuses from the visualization.",
+        "mode": "markdown"
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "grafana"
+          },
+          "queryType": "randomWalk",
+          "refId": "A"
+        }
+      ],
+      "type": "text"
+    },
+    {
+      "datasource": "mysql",
+      "description": "Workflow status nodes with timing metrics and transition edges",
+      "gridPos": {
+        "h": 16,
+        "w": 24,
+        "x": 0,
+        "y": 3
+      },
+      "id": 101,
+      "options": {
+        "nodes": {
+          "mainStatUnit": "h",
+          "secondaryStatUnit": "h"
+        },
+        "edges": {}
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": "mysql",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH bounded_issues AS (\n  SELECT \n    i.id as issue_id,\n    i.original_type,\n    MIN(CASE WHEN ish.original_status = '${start_status}' THEN ish.start_date END) as start_time,\n    MIN(CASE WHEN ish.original_status = '${end_status}' THEN ish.start_date END) as end_time\n  FROM issues i\n  JOIN board_issues bi ON i.id = bi.issue_id\n  JOIN project_mapping pm ON bi.board_id = pm.row_id AND pm.`table` = 'boards'\n  JOIN issue_status_history ish ON i.id = ish.issue_id\n  WHERE \n    pm.project_name IN (${project})\n    AND i.original_type IN (${issue_type})\n    AND ish.original_status IN ('${start_status}', '${end_status}')\n  GROUP BY i.id, i.original_type\n  HAVING start_time IS NOT NULL \n    AND end_time IS NOT NULL \n    AND end_time > start_time\n    AND $__timeFilter(end_time)\n),\nstatus_metrics AS (\n  SELECT \n    ish.original_status,\n    AVG(ish.status_time_minutes) / 60.0 as avg_hours,\n    COUNT(DISTINCT ish.issue_id) as issue_count,\n    GROUP_CONCAT(DISTINCT bi.original_type) as issue_types,\n    MIN(ish.status_time_minutes) / 60.0 as min_hours,\n    MAX(ish.status_time_minutes) / 60.0 as max_hours\n  FROM issue_status_history ish\n  JOIN bounded_issues bi ON ish.issue_id = bi.issue_id\n  WHERE ish.start_date >= bi.start_time \n    AND ish.start_date < bi.end_time\n    AND ish.original_status NOT IN (${exclude_status})\n  GROUP BY ish.original_status\n),\npr_metrics AS (\n  SELECT \n    ish.original_status,\n    AVG(\n      COALESCE(prm.pr_coding_time, 0) + \n      COALESCE(prm.pr_pickup_time, 0) + \n      COALESCE(prm.pr_review_time, 0)\n    ) / 60.0 as avg_pr_time\n  FROM issue_status_history ish\n  JOIN bounded_issues bi ON ish.issue_id = bi.issue_id\n  LEFT JOIN pull_request_issues pri ON bi.issue_id = pri.issue_id\n  LEFT JOIN project_pr_metrics prm ON pri.pull_request_id = prm.id\n  WHERE ish.start_date >= bi.start_time \n    AND ish.start_date < bi.end_time\n    AND ish.original_status NOT IN (${exclude_status})\n  GROUP BY ish.original_status\n),\npercentiles AS (\n  SELECT \n    original_status,\n    avg_hours,\n    PERCENT_RANK() OVER (ORDER BY avg_hours) as pct_rank\n  FROM status_metrics\n)\nSELECT \n  sm.original_status as id,\n  sm.original_status as title,\n  ROUND(sm.avg_hours, 2) as mainStat,\n  ROUND(COALESCE(pm.avg_pr_time, 0), 2) as secondaryStat,\n  sm.issue_count as arc__issues,\n  sm.issue_count as detail__issueCount,\n  sm.issue_types as detail__issueTypes,\n  ROUND(sm.min_hours, 2) as detail__minTime,\n  ROUND(sm.max_hours, 2) as detail__maxTime,\n  CASE \n    WHEN p.pct_rank < 0.33 THEN 'green'\n    WHEN p.pct_rank < 0.66 THEN 'orange'\n    ELSE 'red'\n  END as color\nFROM status_metrics sm\nLEFT JOIN pr_metrics pm ON sm.original_status = pm.original_status\nLEFT JOIN percentiles p ON sm.original_status = p.original_status\nORDER BY sm.avg_hours",
+          "refId": "nodes",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": "mysql",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH bounded_issues AS (\n  SELECT \n    i.id as issue_id,\n    MIN(CASE WHEN ish.original_status = '${start_status}' THEN ish.start_date END) as start_time,\n    MIN(CASE WHEN ish.original_status = '${end_status}' THEN ish.start_date END) as end_time\n  FROM issues i\n  JOIN board_issues bi ON i.id = bi.issue_id\n  JOIN project_mapping pm ON bi.board_id = pm.row_id AND pm.`table` = 'boards'\n  JOIN issue_status_history ish ON i.id = ish.issue_id\n  WHERE \n    pm.project_name IN (${project})\n    AND i.original_type IN (${issue_type})\n    AND ish.original_status IN ('${start_status}', '${end_status}')\n  GROUP BY i.id\n  HAVING start_time IS NOT NULL \n    AND end_time IS NOT NULL \n    AND end_time > start_time\n    AND $__timeFilter(end_time)\n),\nstatus_sequence AS (\n  SELECT \n    ish.issue_id,\n    ish.original_status,\n    ish.start_date,\n    LEAD(ish.original_status) OVER (PARTITION BY ish.issue_id ORDER BY ish.start_date) as next_status\n  FROM issue_status_history ish\n  JOIN bounded_issues bi ON ish.issue_id = bi.issue_id\n  WHERE ish.start_date >= bi.start_time \n    AND ish.start_date < bi.end_time\n    AND ish.original_status NOT IN (${exclude_status})\n),\ntransitions AS (\n  SELECT \n    original_status as source,\n    next_status as target,\n    COUNT(*) as transition_count\n  FROM status_sequence\n  WHERE next_status IS NOT NULL\n    AND next_status NOT IN (${exclude_status})\n  GROUP BY original_status, next_status\n),\nsource_totals AS (\n  SELECT \n    source,\n    SUM(transition_count) as total_from_source\n  FROM transitions\n  GROUP BY source\n)\nSELECT \n  t.source as source,\n  t.target as target,\n  CONCAT(ROUND(t.transition_count * 100.0 / st.total_from_source, 1), '%') as mainStat\nFROM transitions t\nJOIN source_totals st ON t.source = st.source\nORDER BY t.source, t.transition_count DESC",
+          "refId": "edges",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Jira Workflow Node Graph",
+      "type": "nodeGraph"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 39,
+  "tags": [
+    "DORA"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "mysql",
+        "definition": "SELECT DISTINCT name FROM projects",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Project",
+        "multi": true,
+        "name": "project",
+        "options": [],
+        "query": "SELECT DISTINCT name FROM projects",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "In Progress",
+          "value": "In Progress"
+        },
+        "datasource": "mysql",
+        "definition": "SELECT DISTINCT original_status FROM issue_status_history ORDER BY original_status",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Start Status",
+        "multi": false,
+        "name": "start_status",
+        "options": [],
+        "query": "SELECT DISTINCT original_status FROM issue_status_history ORDER BY original_status",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "Verified",
+          "value": "Verified"
+        },
+        "datasource": "mysql",
+        "definition": "SELECT DISTINCT original_status FROM issue_status_history ORDER BY original_status",
+        "hide": 0,
+        "includeAll": false,
+        "label": "End Status",
+        "multi": false,
+        "name": "end_status",
+        "options": [],
+        "query": "SELECT DISTINCT original_status FROM issue_status_history ORDER BY original_status",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "mysql",
+        "definition": "SELECT DISTINCT original_type FROM issues ORDER BY original_type",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Issue Type",
+        "multi": true,
+        "name": "issue_type",
+        "options": [],
+        "query": "SELECT DISTINCT original_type FROM issues ORDER BY original_type",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "Closed"
+          ],
+          "value": [
+            "Closed"
+          ]
+        },
+        "datasource": "mysql",
+        "definition": "SELECT DISTINCT original_status FROM issue_status_history ORDER BY original_status",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Exclude Statuses",
+        "multi": true,
+        "name": "exclude_status",
+        "options": [],
+        "query": "SELECT DISTINCT original_status FROM issue_status_history ORDER BY original_status",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6M",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "utc",
+  "title": "DORA Details - Jira Workflow Node Graph",
+  "uid": "jira-workflow-node-graph",
+  "version": 1,
+  "weekStart": ""
+}
