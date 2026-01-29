@@ -82,7 +82,7 @@ Add stat panels displaying average and median bounded cycle time calculated from
   - Same color and threshold configuration as average panel
 - [x] 2.4 Test both queries return numeric values with sample variable values
 
-### [ ] 3.0 Add Time Per Status Breakdown Panel
+### [x] 3.0 Add Time Per Status Breakdown Panel
 
 Implement bar chart showing average time spent in each status within the selected bounds to identify workflow bottlenecks.
 
@@ -95,19 +95,19 @@ Implement bar chart showing average time spent in each status within the selecte
 
 #### 3.0 Tasks
 
-- [ ] 3.1 Write SQL query that:
+- [x] 3.1 Write SQL query that:
   - Selects `original_status` and `SUM(status_time_minutes) / 60.0 / COUNT(DISTINCT issue_id)` as average hours
   - Filters issues that have both start_status and end_status in their history
   - Groups by `original_status`
   - Orders by a CASE statement defining workflow sequence (e.g., "Open"=1, "In Progress"=2, "Code Review"=3, etc.) or by first occurrence time
   - Filters by project, issue_type, and time range
-- [ ] 3.2 Create bar chart panel (id: 103, type: "barchart", gridPos: h:8, w:24, x:0, y:10) with:
+- [x] 3.2 Create bar chart panel (id: 103, type: "barchart", gridPos: h:8, w:24, x:0, y:10) with:
   - X-axis: status names
   - Y-axis: average hours
   - `fillOpacity: 80`, `barWidth: 0.7`
   - Distinct colors per bar (use palette-classic mode)
   - `xTickLabelRotation: 45` for readability
-- [ ] 3.3 Configure legend placement at bottom, tooltip mode single
+- [x] 3.3 Configure legend placement at bottom, tooltip mode single
 
 ### [ ] 4.0 Integrate PR Metrics Panels
 
