@@ -160,7 +160,7 @@ Add time series panel showing bounded cycle time trend over time with weekly/mon
 - [x] 5.3 Configure Y-axis label as "Hours" and legend at bottom
 - [x] 5.4 Enable tooltip with `mode: "single"` for clean display
 
-### [ ] 6.0 Build Detailed Issue Table
+### [x] 6.0 Build Detailed Issue Table
 
 Implement table panel showing individual issues with all metrics for drill-down analysis, including clickable links to Jira.
 
@@ -173,7 +173,7 @@ Implement table panel showing individual issues with all metrics for drill-down 
 
 #### 6.0 Tasks
 
-- [ ] 6.1 Write comprehensive SQL query returning columns:
+- [x] 6.1 Write comprehensive SQL query returning columns:
   - `issue_key` as "Issue Key"
   - `title` as "Title"
   - Bounded cycle time (hours) as "Bounded Cycle Time"
@@ -181,14 +181,14 @@ Implement table panel showing individual issues with all metrics for drill-down 
   - Time in "In SQA" statuses as "SQA Time"
   - PR metrics (coding, pickup, review, deploy) as individual columns
   - `url` as hidden column for linking
-- [ ] 6.2 Create table panel (id: 109, type: "table", gridPos: h:12, w:24, x:0, y:33) with:
+- [x] 6.2 Create table panel (id: 109, type: "table", gridPos: h:12, w:24, x:0, y:33) with:
   - `custom.filterable: true` for column filtering
   - `cellHeight: "sm"` for compact display
   - `showHeader: true`
-- [ ] 6.3 Add field override for "Issue Key" column with link to `${__data.fields["url_hidden"]}`
-- [ ] 6.4 Add field override to hide the URL column (`custom.hidden: true` for "url_hidden")
-- [ ] 6.5 Add field override for "Bounded Cycle Time" column with:
+- [x] 6.3 Add field override for "Issue Key" column with link to `${__data.fields["url_hidden"]}`
+- [x] 6.4 Add field override to hide the URL column (`custom.hidden: true` for "url_hidden")
+- [x] 6.5 Add field override for "Bounded Cycle Time" column with:
   - `custom.cellOptions: { type: "color-text" }`
   - Threshold colors: green < 24h, orange < 168h, red >= 168h
-- [ ] 6.6 Set fixed width for "Title" column (~400px) to prevent table overflow
-- [ ] 6.7 Configure default sort by "Bounded Cycle Time" descending to show slowest issues first
+- [x] 6.6 Set fixed width for "Title" column (~400px) to prevent table overflow
+- [x] 6.7 Configure default sort by "Bounded Cycle Time" descending to show slowest issues first

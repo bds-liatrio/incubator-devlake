@@ -335,7 +335,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "WITH bounded_issues AS (\n  SELECT \n    i.id as issue_id,\n    MIN(CASE WHEN ish.original_status = '${start_status}' THEN ish.start_date END) as start_time,\n    MIN(CASE WHEN ish.original_status = '${end_status}' THEN ish.start_date END) as end_time\n  FROM issues i\n  JOIN board_issues bi ON i.id = bi.issue_id\n  JOIN project_mapping pm ON bi.board_id = pm.row_id AND pm.`table` = 'boards'\n  JOIN issue_status_history ish ON i.id = ish.issue_id\n  WHERE \n    pm.project_name IN (${project})\n    AND i.original_type IN (${issue_type})\n    AND ish.original_status IN ('${start_status}', '${end_status}')\n  GROUP BY i.id\n  HAVING start_time IS NOT NULL \n    AND end_time IS NOT NULL \n    AND end_time > start_time\n    AND $__timeFilter(end_time)\n),\nstatus_times AS (\n  SELECT \n    ish.original_status,\n    SUM(ish.status_time_minutes) / 60.0 as total_hours,\n    COUNT(DISTINCT ish.issue_id) as issue_count,\n    MIN(ish.start_date) as first_occurrence\n  FROM issue_status_history ish\n  JOIN bounded_issues bi ON ish.issue_id = bi.issue_id\n  WHERE ish.start_date >= bi.start_time \n    AND ish.start_date <= bi.end_time\n  GROUP BY ish.original_status\n)\nSELECT \n  original_status as 'Status',\n  ROUND(total_hours / issue_count, 2) as 'Average Hours'\nFROM status_times\nORDER BY first_occurrence",
+          "rawSql": "WITH bounded_issues AS (\n  SELECT \n    i.id as issue_id,\n    MIN(CASE WHEN ish.original_status = '${start_status}' THEN ish.start_date END) as start_time,\n    MIN(CASE WHEN ish.original_status = '${end_status}' THEN ish.start_date END) as end_time\n  FROM issues i\n  JOIN board_issues bi ON i.id = bi.issue_id\n  JOIN project_mapping pm ON bi.board_id = pm.row_id AND pm.`table` = 'boards'\n  JOIN issue_status_history ish ON i.id = ish.issue_id\n  WHERE \n    pm.project_name IN (${project})\n    AND i.original_type IN (${issue_type})\n    AND ish.original_status IN ('${start_status}', '${end_status}')\n  GROUP BY i.id\n  HAVING start_time IS NOT NULL \n    AND end_time IS NOT NULL \n    AND end_time > start_time\n    AND $__timeFilter(end_time)\n),\nstatus_first_occurrence AS (\n  SELECT \n    ish.issue_id,\n    ish.original_status,\n    MIN(ish.start_date) as first_occurrence,\n    SUM(ish.status_time_minutes) as total_minutes\n  FROM issue_status_history ish\n  JOIN bounded_issues bi ON ish.issue_id = bi.issue_id\n  GROUP BY ish.issue_id, ish.original_status\n),\nfiltered_statuses AS (\n  SELECT \n    sfo.original_status,\n    SUM(sfo.total_minutes) / 60.0 as total_hours,\n    COUNT(DISTINCT sfo.issue_id) as issue_count,\n    MIN(sfo.first_occurrence) as earliest_first_occurrence\n  FROM status_first_occurrence sfo\n  JOIN bounded_issues bi ON sfo.issue_id = bi.issue_id\n  WHERE sfo.first_occurrence >= bi.start_time \n    AND sfo.first_occurrence < bi.end_time\n    AND sfo.original_status != '${end_status}'\n    AND sfo.original_status NOT IN (${exclude_status})\n  GROUP BY sfo.original_status\n)\nSELECT \n  original_status as 'Status',\n  ROUND(total_hours / issue_count, 2) as 'Average Hours'\nFROM filtered_statuses\nORDER BY CASE original_status\n  WHEN 'Opened' THEN 1\n  WHEN 'Requirements Blocked' THEN 2\n  WHEN 'In Grooming' THEN 3\n  WHEN 'Ready for Development' THEN 4\n  WHEN 'Development Blocked' THEN 5\n  WHEN 'In Progress' THEN 6\n  WHEN 'Code Review' THEN 7\n  WHEN 'Ready for SQA' THEN 8\n  WHEN 'Ready for SQE' THEN 9\n  WHEN 'In SQA Review' THEN 10\n  WHEN 'SQA Blocked' THEN 11\n  WHEN 'Redo' THEN 12\n  WHEN 'Verified' THEN 13\n  ELSE 99\nEND",
           "refId": "A",
           "sql": {
             "columns": [
@@ -806,6 +806,160 @@
       ],
       "title": "5. Bounded Cycle Time Trend",
       "type": "timeseries"
+    },
+    {
+      "datasource": "mysql",
+      "description": "Individual issues with bounded cycle time and PR metrics",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 24
+              },
+              {
+                "color": "red",
+                "value": 168
+              }
+            ]
+          },
+          "unit": "h"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Bounded Cycle Time"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Issue Key"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "Open in Jira",
+                    "url": "${__data.fields[\"url_hidden\"]}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "url_hidden"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Title"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 400
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 33
+      },
+      "id": 109,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": true,
+          "enablePagination": false,
+          "fields": "",
+          "reducer": [
+            "count"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Bounded Cycle Time"
+          }
+        ]
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": "mysql",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH bounded_issues AS (\n  SELECT \n    i.id as issue_id,\n    i.issue_key,\n    i.title,\n    i.url,\n    MIN(CASE WHEN ish.original_status = '${start_status}' THEN ish.start_date END) as start_time,\n    MIN(CASE WHEN ish.original_status = '${end_status}' THEN ish.start_date END) as end_time\n  FROM issues i\n  JOIN board_issues bi ON i.id = bi.issue_id\n  JOIN project_mapping pm ON bi.board_id = pm.row_id AND pm.`table` = 'boards'\n  JOIN issue_status_history ish ON i.id = ish.issue_id\n  WHERE \n    pm.project_name IN (${project})\n    AND i.original_type IN (${issue_type})\n    AND ish.original_status IN ('${start_status}', '${end_status}')\n  GROUP BY i.id, i.issue_key, i.title, i.url\n  HAVING start_time IS NOT NULL \n    AND end_time IS NOT NULL \n    AND end_time > start_time\n    AND $__timeFilter(end_time)\n),\nstatus_times AS (\n  SELECT \n    ish.issue_id,\n    SUM(CASE WHEN ish.original_status LIKE '%Dev%' OR ish.original_status LIKE '%Progress%' OR ish.original_status LIKE '%Code%' THEN ish.status_time_minutes ELSE 0 END) / 60.0 as dev_time,\n    SUM(CASE WHEN ish.original_status LIKE '%QA%' OR ish.original_status LIKE '%Test%' OR ish.original_status LIKE '%Verif%' THEN ish.status_time_minutes ELSE 0 END) / 60.0 as sqa_time\n  FROM issue_status_history ish\n  JOIN bounded_issues bi ON ish.issue_id = bi.issue_id\n  WHERE ish.start_date >= bi.start_time AND ish.start_date <= bi.end_time\n  GROUP BY ish.issue_id\n)\nSELECT \n  bi.issue_key as 'Issue Key',\n  bi.title as 'Title',\n  bi.url as url_hidden,\n  ROUND(TIMESTAMPDIFF(MINUTE, bi.start_time, bi.end_time) / 60.0, 2) as 'Bounded Cycle Time',\n  ROUND(COALESCE(st.dev_time, 0), 2) as 'Dev Time',\n  ROUND(COALESCE(st.sqa_time, 0), 2) as 'SQA Time'\nFROM bounded_issues bi\nLEFT JOIN status_times st ON bi.issue_id = st.issue_id\nORDER BY TIMESTAMPDIFF(MINUTE, bi.start_time, bi.end_time) DESC",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "6. Issue Details",
+      "type": "table"
     }
   ],
   "refresh": "",
@@ -901,6 +1055,31 @@
         "name": "issue_type",
         "options": [],
         "query": "SELECT DISTINCT original_type FROM issues ORDER BY original_type",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "Closed"
+          ],
+          "value": [
+            "Closed"
+          ]
+        },
+        "datasource": "mysql",
+        "definition": "SELECT DISTINCT original_status FROM issue_status_history ORDER BY original_status",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Exclude Statuses",
+        "multi": true,
+        "name": "exclude_status",
+        "options": [],
+        "query": "SELECT DISTINCT original_status FROM issue_status_history ORDER BY original_status",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
