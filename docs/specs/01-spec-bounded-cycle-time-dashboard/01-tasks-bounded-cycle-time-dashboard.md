@@ -29,7 +29,7 @@ This task list implements the Bounded Cycle Time Dashboard as specified in `01-s
 
 ## Tasks
 
-### [ ] 1.0 Create Dashboard Foundation with Status Variables
+### [x] 1.0 Create Dashboard Foundation with Status Variables
 
 Establish the dashboard JSON structure with configurable Jira status dropdown variables that allow users to select start and end status boundaries.
 
@@ -42,15 +42,15 @@ Establish the dashboard JSON structure with configurable Jira status dropdown va
 
 #### 1.0 Tasks
 
-- [ ] 1.1 Create base JSON file by copying structure from `DORADetails-LeadTimeforChanges.json` (annotations, editable, fiscalYearStartMonth, graphTooltip, liveNow, schemaVersion, time, timezone, weekStart)
-- [ ] 1.2 Configure dashboard metadata: set `title` to "DORA Details - Bounded Lead Time for Changes", `uid` to "Bounded-lead-time-for-changes", `tags` to ["DORA"]
-- [ ] 1.3 Add "Go Back" navigation link to main DORA dashboard (`/d/qNo8_0M4z/dora?orgId=1`) with `keepTime: true`
-- [ ] 1.4 Add `project` variable (type: query, multi: true, includeAll: true) with query: `SELECT DISTINCT name FROM projects`
-- [ ] 1.5 Add `start_status` variable (type: query) with query: `SELECT DISTINCT original_status FROM issue_status_history ORDER BY original_status` and default value "In Progress"
-- [ ] 1.6 Add `end_status` variable (type: query) with query: `SELECT DISTINCT original_status FROM issue_status_history ORDER BY original_status` and default value "Verified"
-- [ ] 1.7 Add `issue_type` variable (type: query, multi: true, includeAll: true) with query: `SELECT DISTINCT original_type FROM issues ORDER BY original_type`
-- [ ] 1.8 Add markdown text panel (id: 100, gridPos: h:3, w:24, x:0, y:0) explaining dashboard purpose: "This dashboard shows bounded cycle time between configurable Jira statuses. Select start and end statuses to measure time for specific workflow phases."
-- [ ] 1.9 Validate JSON syntax using `python -m json.tool` or equivalent
+- [x] 1.1 Create base JSON file by copying structure from `DORADetails-LeadTimeforChanges.json` (annotations, editable, fiscalYearStartMonth, graphTooltip, liveNow, schemaVersion, time, timezone, weekStart)
+- [x] 1.2 Configure dashboard metadata: set `title` to "DORA Details - Bounded Lead Time for Changes", `uid` to "Bounded-lead-time-for-changes", `tags` to ["DORA"]
+- [x] 1.3 Add "Go Back" navigation link to main DORA dashboard (`/d/qNo8_0M4z/dora?orgId=1`) with `keepTime: true`
+- [x] 1.4 Add `project` variable (type: query, multi: true, includeAll: true) with query: `SELECT DISTINCT name FROM projects`
+- [x] 1.5 Add `start_status` variable (type: query) with query: `SELECT DISTINCT original_status FROM issue_status_history ORDER BY original_status` and default value "In Progress"
+- [x] 1.6 Add `end_status` variable (type: query) with query: `SELECT DISTINCT original_status FROM issue_status_history ORDER BY original_status` and default value "Verified"
+- [x] 1.7 Add `issue_type` variable (type: query, multi: true, includeAll: true) with query: `SELECT DISTINCT original_type FROM issues ORDER BY original_type`
+- [x] 1.8 Add markdown text panel (id: 100, gridPos: h:3, w:24, x:0, y:0) explaining dashboard purpose: "This dashboard shows bounded cycle time between configurable Jira statuses. Select start and end statuses to measure time for specific workflow phases."
+- [x] 1.9 Validate JSON syntax using `python -m json.tool` or equivalent
 
 ### [ ] 2.0 Implement Bounded Cycle Time Stat Panels
 

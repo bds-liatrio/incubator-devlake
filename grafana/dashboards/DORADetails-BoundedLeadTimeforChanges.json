@@ -1,0 +1,183 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "bolt",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Go Back",
+      "tooltip": "",
+      "type": "link",
+      "url": "/d/qNo8_0M4z/dora?orgId=1"
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 100,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "- This dashboard shows **bounded cycle time** between configurable Jira statuses.\n- Select **Start Status** and **End Status** to measure time for specific workflow phases (e.g., \"In Progress\" to \"Verified\").\n- Use this to understand actual development cycle time excluding backlog wait time.\n- PR metrics show associated pull request timing for issues within the bounded range.",
+        "mode": "markdown"
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "grafana"
+          },
+          "queryType": "randomWalk",
+          "refId": "A"
+        }
+      ],
+      "type": "text"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 39,
+  "tags": [
+    "DORA"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "mysql",
+        "definition": "SELECT DISTINCT name FROM projects",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Project",
+        "multi": true,
+        "name": "project",
+        "options": [],
+        "query": "SELECT DISTINCT name FROM projects",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "In Progress",
+          "value": "In Progress"
+        },
+        "datasource": "mysql",
+        "definition": "SELECT DISTINCT original_status FROM issue_status_history ORDER BY original_status",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Start Status",
+        "multi": false,
+        "name": "start_status",
+        "options": [],
+        "query": "SELECT DISTINCT original_status FROM issue_status_history ORDER BY original_status",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "Verified",
+          "value": "Verified"
+        },
+        "datasource": "mysql",
+        "definition": "SELECT DISTINCT original_status FROM issue_status_history ORDER BY original_status",
+        "hide": 0,
+        "includeAll": false,
+        "label": "End Status",
+        "multi": false,
+        "name": "end_status",
+        "options": [],
+        "query": "SELECT DISTINCT original_status FROM issue_status_history ORDER BY original_status",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "mysql",
+        "definition": "SELECT DISTINCT original_type FROM issues ORDER BY original_type",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Issue Type",
+        "multi": true,
+        "name": "issue_type",
+        "options": [],
+        "query": "SELECT DISTINCT original_type FROM issues ORDER BY original_type",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6M",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "utc",
+  "title": "DORA Details - Bounded Lead Time for Changes",
+  "uid": "Bounded-lead-time-for-changes",
+  "version": 1,
+  "weekStart": ""
+}
