@@ -52,7 +52,7 @@ Establish the dashboard JSON structure with configurable Jira status dropdown va
 - [x] 1.8 Add markdown text panel (id: 100, gridPos: h:3, w:24, x:0, y:0) explaining dashboard purpose: "This dashboard shows bounded cycle time between configurable Jira statuses. Select start and end statuses to measure time for specific workflow phases."
 - [x] 1.9 Validate JSON syntax using `python -m json.tool` or equivalent
 
-### [ ] 2.0 Implement Bounded Cycle Time Stat Panels
+### [x] 2.0 Implement Bounded Cycle Time Stat Panels
 
 Add stat panels displaying average and median bounded cycle time calculated from selected start status to end status, with appropriate color thresholds.
 
@@ -65,22 +65,22 @@ Add stat panels displaying average and median bounded cycle time calculated from
 
 #### 2.0 Tasks
 
-- [ ] 2.1 Write CTE-based SQL query for bounded cycle time that:
+- [x] 2.1 Write CTE-based SQL query for bounded cycle time that:
   - Joins `issues` to `board_issues` to `project_mapping` for project filtering
   - Joins `issue_status_history` twice (for start and end status)
   - Uses `MIN()` to get first entry into each status (ignoring rework cycles)
   - Calculates `TIMESTAMPDIFF(MINUTE, start_time, end_time) / 60.0` as hours
   - Filters by `${project}`, `${start_status}`, `${end_status}`, `${issue_type}`
   - Uses `$__timeFilter()` on an appropriate date column
-- [ ] 2.2 Create "Average Bounded Cycle Time" stat panel (id: 101, gridPos: h:7, w:8, x:0, y:3) with:
+- [x] 2.2 Create "Average Bounded Cycle Time" stat panel (id: 101, gridPos: h:7, w:8, x:0, y:3) with:
   - `AVG()` aggregation in SQL
   - Green fixed color, unit: "h"
   - Threshold steps: null=green, 24=orange, 168=red
   - Link to DevLake cycle time documentation
-- [ ] 2.3 Create "Median Bounded Cycle Time" stat panel (id: 102, gridPos: h:7, w:8, x:8, y:3) with:
+- [x] 2.3 Create "Median Bounded Cycle Time" stat panel (id: 102, gridPos: h:7, w:8, x:8, y:3) with:
   - `PERCENT_RANK()` window function for median calculation (WHERE ranks <= 0.5)
   - Same color and threshold configuration as average panel
-- [ ] 2.4 Test both queries return numeric values with sample variable values
+- [x] 2.4 Test both queries return numeric values with sample variable values
 
 ### [ ] 3.0 Add Time Per Status Breakdown Panel
 

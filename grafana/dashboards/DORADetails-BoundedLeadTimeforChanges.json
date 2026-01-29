@@ -67,6 +67,192 @@
         }
       ],
       "type": "text"
+    },
+    {
+      "datasource": "mysql",
+      "description": "Average time from first entry into Start Status to first entry into End Status",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 24
+              },
+              {
+                "color": "red",
+                "value": 168
+              }
+            ]
+          },
+          "unit": "h"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 3
+      },
+      "id": 101,
+      "links": [
+        {
+          "targetBlank": true,
+          "title": "Cycle Time",
+          "url": "https://devlake.apache.org/docs/Metrics/LeadTimeForChanges"
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": "mysql",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH bounded_issues AS (\n  SELECT \n    i.id as issue_id,\n    MIN(CASE WHEN ish.original_status = '${start_status}' THEN ish.start_date END) as start_time,\n    MIN(CASE WHEN ish.original_status = '${end_status}' THEN ish.start_date END) as end_time\n  FROM issues i\n  JOIN board_issues bi ON i.id = bi.issue_id\n  JOIN project_mapping pm ON bi.board_id = pm.row_id AND pm.`table` = 'boards'\n  JOIN issue_status_history ish ON i.id = ish.issue_id\n  WHERE \n    pm.project_name IN (${project})\n    AND i.original_type IN (${issue_type})\n    AND ish.original_status IN ('${start_status}', '${end_status}')\n  GROUP BY i.id\n  HAVING start_time IS NOT NULL \n    AND end_time IS NOT NULL \n    AND end_time > start_time\n    AND $__timeFilter(end_time)\n)\nSELECT \n  AVG(TIMESTAMPDIFF(MINUTE, start_time, end_time) / 60.0) as 'Average Bounded Cycle Time (h)'\nFROM bounded_issues",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "1. Average Bounded Cycle Time",
+      "type": "stat"
+    },
+    {
+      "datasource": "mysql",
+      "description": "Median time from first entry into Start Status to first entry into End Status",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "green",
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 24
+              },
+              {
+                "color": "red",
+                "value": 168
+              }
+            ]
+          },
+          "unit": "h"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 3
+      },
+      "id": 102,
+      "links": [
+        {
+          "targetBlank": true,
+          "title": "Cycle Time",
+          "url": "https://devlake.apache.org/docs/Metrics/LeadTimeForChanges"
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": "mysql",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH bounded_issues AS (\n  SELECT \n    i.id as issue_id,\n    MIN(CASE WHEN ish.original_status = '${start_status}' THEN ish.start_date END) as start_time,\n    MIN(CASE WHEN ish.original_status = '${end_status}' THEN ish.start_date END) as end_time\n  FROM issues i\n  JOIN board_issues bi ON i.id = bi.issue_id\n  JOIN project_mapping pm ON bi.board_id = pm.row_id AND pm.`table` = 'boards'\n  JOIN issue_status_history ish ON i.id = ish.issue_id\n  WHERE \n    pm.project_name IN (${project})\n    AND i.original_type IN (${issue_type})\n    AND ish.original_status IN ('${start_status}', '${end_status}')\n  GROUP BY i.id\n  HAVING start_time IS NOT NULL \n    AND end_time IS NOT NULL \n    AND end_time > start_time\n    AND $__timeFilter(end_time)\n),\nranked_issues AS (\n  SELECT \n    TIMESTAMPDIFF(MINUTE, start_time, end_time) / 60.0 as cycle_time_hours,\n    PERCENT_RANK() OVER (ORDER BY TIMESTAMPDIFF(MINUTE, start_time, end_time)) as pct_rank\n  FROM bounded_issues\n)\nSELECT \n  AVG(cycle_time_hours) as 'Median Bounded Cycle Time (h)'\nFROM ranked_issues\nWHERE pct_rank <= 0.5",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "2. Median Bounded Cycle Time",
+      "type": "stat"
     }
   ],
   "refresh": "",
