@@ -109,7 +109,7 @@ Implement bar chart showing average time spent in each status within the selecte
   - `xTickLabelRotation: 45` for readability
 - [x] 3.3 Configure legend placement at bottom, tooltip mode single
 
-### [ ] 4.0 Integrate PR Metrics Panels
+### [x] 4.0 Integrate PR Metrics Panels
 
 Add stat panels displaying PR timing metrics (coding, pickup, review, deploy times) for issues within the bounded time range.
 
@@ -122,18 +122,18 @@ Add stat panels displaying PR timing metrics (coding, pickup, review, deploy tim
 
 #### 4.0 Tasks
 
-- [ ] 4.1 Write base SQL query template that:
+- [x] 4.1 Write base SQL query template that:
   - Joins `issues` → `pull_request_issues` → `project_pr_metrics`
   - Filters by project, issue_type, and time range
   - Uses `COALESCE(metric/60, 0)` to convert minutes to hours with null handling
-- [ ] 4.2 Create "Average PR Coding Time" stat panel (id: 104, gridPos: h:7, w:6, x:0, y:18) with:
+- [x] 4.2 Create "Average PR Coding Time" stat panel (id: 104, gridPos: h:7, w:6, x:0, y:18) with:
   - `AVG(COALESCE(pr_coding_time/60, 0))` query
   - Blue fixed color (`fixedColor: "blue"`)
   - Unit: "h"
-- [ ] 4.3 Create "Average PR Pickup Time" stat panel (id: 105, gridPos: h:7, w:6, x:6, y:18) with same styling
-- [ ] 4.4 Create "Average PR Review Time" stat panel (id: 106, gridPos: h:7, w:6, x:12, y:18) with same styling
-- [ ] 4.5 Create "Average PR Deploy Time" stat panel (id: 107, gridPos: h:7, w:6, x:18, y:18) with same styling
-- [ ] 4.6 Add links to respective DevLake documentation pages for each metric
+- [x] 4.3 Create "Average PR Pickup Time" stat panel (id: 105, gridPos: h:7, w:6, x:6, y:18) with same styling
+- [x] 4.4 Create "Average PR Review Time" stat panel (id: 106, gridPos: h:7, w:6, x:12, y:18) with same styling
+- [x] 4.5 Create "Average PR Deploy Time" stat panel (id: 107, gridPos: h:7, w:6, x:18, y:18) with same styling
+- [x] 4.6 Add links to respective DevLake documentation pages for each metric
 
 ### [ ] 5.0 Create Trend Chart for Historical Analysis
 
